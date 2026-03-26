@@ -11,7 +11,12 @@ import {
   exchangeAndVerifyGoogleCode,
   upsertGoogleUser,
 } from "../services/oauth.service";
-import { ValidationError, ConflictError, NotFoundError, UnauthorizedError } from "../utils/errors";
+import {
+  ValidationError,
+  ConflictError,
+  NotFoundError,
+  UnauthorizedError,
+} from "../utils/errors";
 import { config, jwt } from "../config";
 import { logAuditEvent } from "../services/audit.service";
 
@@ -23,7 +28,7 @@ const registerSchema = z.object({
     .max(30, "Username cannot exceed 30 characters")
     .regex(
       /^\w+$/,
-      "Username can only contain letters, numbers, and underscores"
+      "Username can only contain letters, numbers, and underscores",
     ),
   email: z.string().email(),
   password: z
@@ -71,16 +76,12 @@ const generateToken = (
   role: string,
   authProvider: string,
 ): string => {
-  return jwtLib.sign(
-    { id, role, authProvider },
-    jwt.secret,
-    {
-      expiresIn: jwt.expiresIn,
-      issuer: jwt.issuer,
-      audience: jwt.audience,
-      algorithm: 'HS256',
-    }
-  );
+  return jwtLib.sign({ id, role, authProvider }, jwt.secret, {
+    expiresIn: jwt.expiresIn,
+    issuer: jwt.issuer,
+    audience: jwt.audience,
+    algorithm: "HS256",
+  });
 };
 
 // Always return this exact message for forgot-password — prevents user enumeration
@@ -105,10 +106,12 @@ export const register = async (
     if (existingUser) {
       if (existingUser.email === email) {
         throw new ConflictError(
-          "An account with that email already exists. Try signing in instead."
+          "An account with that email already exists. Try signing in instead.",
         );
       }
-      throw new ConflictError("That username is already taken. Please choose another.");
+      throw new ConflictError(
+        "That username is already taken. Please choose another.",
+      );
     }
     const user = await User.create({ username, email, password });
     const token = generateToken(
@@ -121,7 +124,12 @@ export const register = async (
       { userId: ObjectIdToString(user._id), role: user.role },
       7 * 24 * 60 * 60,
     );
-    logAuditEvent({ action: 'auth.register.success', req, userId: ObjectIdToString(user._id), email });
+    logAuditEvent({
+      action: "auth.register.success",
+      req,
+      userId: ObjectIdToString(user._id),
+      email,
+    });
     res.status(201).json({
       success: true,
       data: { user, token },
@@ -152,14 +160,24 @@ export const login = async (
 
     // Google-only account: no password set — give actionable message
     if (user.authProvider === "google" && !user.password) {
-      logAuditEvent({ action: 'auth.login.failure', req, email, metadata: { reason: 'google_only_account' } });
+      logAuditEvent({
+        action: "auth.login.failure",
+        req,
+        email,
+        metadata: { reason: "google_only_account" },
+      });
       throw new UnauthorizedError(
-        "This account uses Google Sign-In. Please continue with Google."
+        "This account uses Google Sign-In. Please continue with Google.",
       );
     }
 
     if (!(await user.comparePassword(password))) {
-      logAuditEvent({ action: 'auth.login.failure', req, email, metadata: { reason: 'invalid_password' } });
+      logAuditEvent({
+        action: "auth.login.failure",
+        req,
+        email,
+        metadata: { reason: "invalid_password" },
+      });
       throw new UnauthorizedError("Invalid email or password");
     }
 
@@ -177,7 +195,12 @@ export const login = async (
       { userId: ObjectIdToString(user._id), role: user.role },
       7 * 24 * 60 * 60,
     );
-    logAuditEvent({ action: 'auth.login.success', req, userId: ObjectIdToString(user._id), email });
+    logAuditEvent({
+      action: "auth.login.success",
+      req,
+      userId: ObjectIdToString(user._id),
+      email,
+    });
     res.json({
       success: true,
       data: { user, token },
@@ -202,7 +225,7 @@ export const logout = async (
       });
       await cacheDel(`session:${userId}`);
     }
-    logAuditEvent({ action: 'auth.logout', req, userId: userId?.toString() });
+    logAuditEvent({ action: "auth.logout", req, userId: userId?.toString() });
     res.json({ success: true, message: "Logged out successfully" });
   } catch (error) {
     next(error);
@@ -240,6 +263,13 @@ export const forgotPassword = async (
 
     const { email } = parsed.data;
 
+    User.updateMany(
+      { passwordResetExpires: { $lt: new Date() } },
+      { $unset: { passwordResetToken: "", passwordResetExpires: "" } },
+    ).catch((err) =>
+      console.error("[forgotPassword] Token cleanup failed:", err),
+    );
+
     const user = await User.findOne({ email }).select("+password");
 
     if (!user || !user.password) {
@@ -269,12 +299,17 @@ export const forgotPassword = async (
       });
       console.error(
         "[forgotPassword] Email delivery failed:",
-        emailError instanceof Error ? emailError.message : "Unknown error"
+        emailError instanceof Error ? emailError.message : "Unknown error",
       );
       throw new Error("Failed to send reset email. Please try again.");
     }
 
-    logAuditEvent({ action: 'auth.password_reset.requested', req, userId: ObjectIdToString(user._id), email: user.email });
+    logAuditEvent({
+      action: "auth.password_reset.requested",
+      req,
+      userId: ObjectIdToString(user._id),
+      email: user.email,
+    });
     res.json(GENERIC_RESET_RESPONSE);
   } catch (error) {
     next(error);
@@ -351,7 +386,11 @@ export const resetPassword = async (
       },
       $unset: { passwordResetToken: "", passwordResetExpires: "" },
     });
-    logAuditEvent({ action: 'auth.password_reset.completed', req, userId: ObjectIdToString(user._id) });
+    logAuditEvent({
+      action: "auth.password_reset.completed",
+      req,
+      userId: ObjectIdToString(user._id),
+    });
     try {
       await cacheDel(`session:${ObjectIdToString(user._id)}`);
       const redis = getRedis();
@@ -409,7 +448,12 @@ export const googleAuth = async (
       );
     }
 
-    logAuditEvent({ action: 'auth.google.success', req, userId: ObjectIdToString(user._id), email: user.email });
+    logAuditEvent({
+      action: "auth.google.success",
+      req,
+      userId: ObjectIdToString(user._id),
+      email: user.email,
+    });
     res.json({
       success: true,
       data: { user, token },
