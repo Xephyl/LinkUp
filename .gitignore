@@ -41,6 +41,7 @@ Thumbs.db
 .windsurf
 
 #Project Memory
-PROJECT_MEMORY.md
+.devin
+CONVENTIONS.md
 .vercel
 .env*.local
