@@ -9,8 +9,10 @@ import { serviceConfig } from "./services";
 
 let redisClient: Redis | null = null;
 
-export const connectRedis = async (): Promise<Redis> => {
-  const url = serviceConfig.redis.url || "redis://localhost:6379";
+export const connectRedis = async (): Promise<Redis | null> => {
+  const url =
+    serviceConfig.redis.url ||
+    `redis://${serviceConfig.redis.host}:${serviceConfig.redis.port}`;
 
   redisClient = new Redis(url, {
     maxRetriesPerRequest: serviceConfig.redis.maxRetriesPerRequest,
@@ -33,8 +35,21 @@ export const connectRedis = async (): Promise<Redis> => {
   );
 
   // Now .connect() is valid — status is "wait"
-  await redisClient.connect();
-  return redisClient;
+  try {
+    await redisClient.connect();
+    return redisClient;
+  } catch (err) {
+    // retryStrategy returned null → connect() rejects. Redis is optional:
+    // continue without cache; getRedis() throws and all call sites degrade.
+    const failed = redisClient;
+    redisClient = null;
+    failed.disconnect();
+    console.warn(
+      "⚠️ Redis unavailable — continuing without cache/rate-limit store.",
+      err instanceof Error ? err.message : err,
+    );
+    return null;
+  }
 };
 
 export const getRedis = (): Redis => {
