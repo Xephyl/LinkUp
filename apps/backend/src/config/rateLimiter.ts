@@ -1,36 +1,7 @@
 // apps/backend/src/config/rateLimiter.ts
 
 import rateLimit, { RateLimitRequestHandler, Options } from 'express-rate-limit';
-import RedisStore from 'rate-limit-redis';
-import { getRedis } from './redis';
 import { Request } from 'express';
-
-// ─── Redis Store Factory ───────────────────────────────────────────────────────
-// Lazily creates a RedisStore backed by the shared ioredis client.
-// Falls back to MemoryStore if Redis is unavailable (non-fatal degradation).
-// This is intentionally lazy (called at first-request time, not import time)
-// so it runs AFTER connectRedis() has initialised the client in server.ts.
-
-function createRedisStore(prefix: string): RedisStore | undefined {
-  try {
-    const client = getRedis();
-    return new RedisStore({
-      // Use client's call method instead of internal Command import
-      sendCommand: (command: string, ...args: string[]): Promise<string | string[]> => {
-        return client.call(command, ...args) as Promise<string | string[]>;
-      },
-      prefix,
-    });
-  } catch {
-    // Redis not yet initialised or unavailable
-    // express-rate-limit falls back to MemoryStore — safe for single-instance dev,
-    // but cloud deployments should ensure Redis is up before traffic hits
-    console.warn(
-      `[rateLimiter] Redis store unavailable for prefix "${prefix}" — falling back to MemoryStore`
-    );
-    return undefined;
-  }
-}
 
 // ─── Limiter Factory ──────────────────────────────────────────────────────────
 // All limiters share the same sane defaults. Only endpoint-specific values are
@@ -38,11 +9,10 @@ function createRedisStore(prefix: string): RedisStore | undefined {
 
 function createLimiter(
   overrides: Partial<Options> & {
-    prefix: string;
     keyGenerator?: (req: Request) => string;
   }
 ): RateLimitRequestHandler {
-  const { prefix, keyGenerator, ...opts } = overrides;
+  const { keyGenerator, ...opts } = overrides;
 
   return rateLimit({
     // ── Shared defaults ────────────────────────────────────────────────────
@@ -51,8 +21,7 @@ function createLimiter(
     skipFailedRequests: false,    // Count ALL requests, including 4xx/5xx
     skipSuccessfulRequests: false,
 
-    // Redis-backed store — falls back to MemoryStore if unavailable
-    store: createRedisStore(prefix),
+    // In-memory store (default) — single-instance deployment
 
     // ── Per-limiter overrides ──────────────────────────────────────────────
     ...opts,
@@ -88,7 +57,6 @@ const getIp = (req: Request): string => req.ip ?? 'unknown';
 // Individual endpoint limiters below provide the real protection.
 
 export const globalLimiter = createLimiter({
-  prefix: 'rl:global:',
   windowMs: 15 * 60 * 1000, // 15 minutes
   max: 200,
   message: {
@@ -102,7 +70,6 @@ export const globalLimiter = createLimiter({
 // Keyed by IP only — keying by email would leak user existence via timing.
 
 export const loginLimiter = createLimiter({
-  prefix: 'rl:login:',
   windowMs: 15 * 60 * 1000, // 15 minutes
   max: 5,
   keyGenerator: (req) => getIp(req),
@@ -117,7 +84,6 @@ export const loginLimiter = createLimiter({
 // Wider window (1hr) — legitimate users almost never register more than once.
 
 export const registerLimiter = createLimiter({
-  prefix: 'rl:register:',
   windowMs: 60 * 60 * 1000, // 1 hour
   max: 5,
   keyGenerator: (req) => getIp(req),
@@ -133,7 +99,6 @@ export const registerLimiter = createLimiter({
 // Applied BEFORE the email limiter in the route chain.
 
 export const forgotPasswordIpLimiter = createLimiter({
-  prefix: 'rl:forgot-pw-ip:',
   windowMs: 15 * 60 * 1000,
   max: 5, // Slightly higher than email limit to allow for fat-finger retries
   keyGenerator: (req) => getIp(req),
@@ -151,7 +116,6 @@ export const forgotPasswordIpLimiter = createLimiter({
 // The controller still returns GENERIC_RESET_RESPONSE for 200 paths.
 
 export const forgotPasswordEmailLimiter = createLimiter({
-  prefix: 'rl:forgot-pw-email:',
   windowMs: 15 * 60 * 1000,
   max: 3,
   keyGenerator: (req) => {
@@ -170,7 +134,6 @@ export const forgotPasswordEmailLimiter = createLimiter({
 // Higher ceiling — users may refresh the page or navigate back legitimately.
 
 export const resetTokenGetLimiter = createLimiter({
-  prefix: 'rl:reset-get:',
   windowMs: 15 * 60 * 1000,
   max: 10,
   keyGenerator: (req) => getIp(req),
@@ -187,7 +150,6 @@ export const resetTokenGetLimiter = createLimiter({
 // but we still limit to prevent mass-scanning / token-guessing attempts.
 
 export const resetTokenPostLimiter = createLimiter({
-  prefix: 'rl:reset-post:',
   windowMs: 15 * 60 * 1000,
   max: 5,
   keyGenerator: (req) => getIp(req),
@@ -203,7 +165,6 @@ export const resetTokenPostLimiter = createLimiter({
 // Replaces the existing in-memory oauthLimiter in auth.routes.ts.
 
 export const oauthLimiter = createLimiter({
-  prefix: 'rl:google:',
   windowMs: 15 * 60 * 1000,
   max: 10,
   keyGenerator: (req) => {
@@ -225,7 +186,6 @@ export const oauthLimiter = createLimiter({
 // Burst-heavy users (copy-paste flooding) will hit this before globalLimiter.
 
 export const messageLimiter = createLimiter({
-  prefix: 'rl:messages:',
   windowMs: 60 * 1000, // 1 minute
   max: 60,
   keyGenerator: (req: Request) => {

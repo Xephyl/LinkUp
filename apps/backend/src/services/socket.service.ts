@@ -4,7 +4,7 @@ import jwt from 'jsonwebtoken';
 import { User } from '../models/user.model';
 import { Message } from '../models/message.model';
 import { Room } from '../models/room.model';
-import { cacheSet, cacheDel } from '../config/redis';
+import { cacheSet, cacheDel } from '../config/cache';
 import { captureException } from '../config/sentry';
 import { ObjectIdToString } from '../utils/objectId';
 
@@ -45,10 +45,10 @@ const authenticateSocket = async (socket: AuthSocket, next: (err?: Error) => voi
  * Uses lastSeen as the cursor — fetches all messages created after that timestamp.
  * Emits directly to the reconnecting socket only, not the whole room.
  *
- * Why MongoDB and not Redis: messages are already persisted in MongoDB.
- * A separate Redis queue would be a second source of truth with no benefit
- * at this scale. MongoDB with the existing { roomId, createdAt } index
- * makes this query fast even with large message histories.
+ * Why MongoDB: messages are already persisted there. A separate queue would be
+ * a second source of truth with no benefit at this scale. MongoDB with the
+ * existing { roomId, createdAt } index makes this query fast even with large
+ * message histories.
  */
 const deliverQueuedMessages = async (
   socket: AuthSocket,

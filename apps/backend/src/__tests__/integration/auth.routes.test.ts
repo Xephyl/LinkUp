@@ -7,11 +7,12 @@ import { TestUserFactory } from '../helpers/testUserFactory';
 process.env.JWT_SECRET = 'integration_test_secret';
 process.env.JWT_EXPIRES_IN = '7d';
 
-// Mock Redis and email — not available in test environment
-jest.mock('../../config/redis', () => ({
+// Mock cache and email — session store is in-memory, no external services needed
+jest.mock('../../config/cache', () => ({
   cacheSet: jest.fn().mockResolvedValue(undefined),
   cacheDel: jest.fn().mockResolvedValue(undefined),
-  getRedis: jest.fn().mockReturnValue({ publish: jest.fn().mockResolvedValue(1) }),
+  cacheGet: jest.fn().mockResolvedValue(null),
+  setIfAbsent: jest.fn().mockReturnValue(true),
 }));
 jest.mock('../../utils/email', () => ({
   sendEmail: jest.fn().mockResolvedValue(undefined),

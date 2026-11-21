@@ -3,7 +3,7 @@ import { Response, NextFunction } from "express";
 import { z } from "zod";
 import { Message } from "../models/message.model";
 import { Room } from "../models/room.model";
-import { cacheGet, cacheSet, cacheDel } from "../config/redis";
+import { cacheGet, cacheSet, cacheDel } from "../config/cache";
 import { AuthRequest } from "../middlewares/auth.middleware";
 import { getIO } from '../config/socket';
 import { ForbiddenError, NotFoundError, ValidationError } from '../utils/errors';
@@ -38,7 +38,7 @@ export const getMessages = async (
       throw new ForbiddenError("Access denied to this room");
     }
 
-    // Initial load only (no cursor) — check Redis cache
+    // Initial load only (no cursor) — check cache
     const cacheKey = `messages:${roomId}:initial`;
     if (!before) {
       const cached = await cacheGet<unknown>(cacheKey);

@@ -3,7 +3,7 @@ import jwtLib from "jsonwebtoken";
 import bcrypt from "bcryptjs";
 import { z } from "zod";
 import { User } from "../models/user.model";
-import { cacheSet, cacheDel, getRedis } from "../config/redis";
+import { cacheSet, cacheDel } from "../config/cache";
 import { generateResetToken, hashToken } from "../utils/token";
 import { sendEmail, buildPasswordResetEmail } from "../utils/email";
 import { ObjectIdToString } from "../utils/objectId";
@@ -391,16 +391,7 @@ export const resetPassword = async (
       req,
       userId: ObjectIdToString(user._id),
     });
-    try {
-      await cacheDel(`session:${ObjectIdToString(user._id)}`);
-      const redis = getRedis();
-      await redis.publish(
-        `user:logout:${ObjectIdToString(user._id)}`,
-        JSON.stringify({ reason: "password_reset" }),
-      );
-    } catch {
-      // Non-fatal — auth middleware's passwordChangedAt guard is the authoritative fallback
-    }
+    await cacheDel(`session:${ObjectIdToString(user._id)}`);
 
     res.json({
       success: true,
@@ -443,7 +434,7 @@ export const googleAuth = async (
       );
     } catch (cacheError) {
       console.error(
-        `[googleAuth] Redis session cache failed for user ${ObjectIdToString(user._id)}:`,
+        `[googleAuth] session cache failed for user ${ObjectIdToString(user._id)}:`,
         (cacheError as Error).message,
       );
     }

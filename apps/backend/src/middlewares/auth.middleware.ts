@@ -4,7 +4,7 @@ import { User } from "../models/user.model";
 import { setSentryUser } from "../config/sentry";
 import { logAuditEvent } from "../services/audit.service";
 import { ObjectIdToString } from "../utils/objectId";
-import { cacheGet } from "../config/redis";
+import { cacheGet } from "../config/cache";
 import { jwt as jwtConfig } from "../config";
 
 export interface AuthRequest extends Request {
@@ -60,7 +60,7 @@ export const authenticate = async (
       }
     }
 
-    // Check if Redis session exists
+    // Check if session exists in cache
     const session = await cacheGet(`session:${ObjectIdToString(user._id)}`);
     if (!session) {
       res.status(401).json({

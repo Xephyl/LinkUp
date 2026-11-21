@@ -11,7 +11,7 @@ Multi-platform chat application — real-time messaging across web, mobile, and 
 | Backend | Express, MongoDB (Mongoose), Socket.io |
 | Mobile | Expo / React Native |
 | Desktop | Electron + Vite |
-| Services | Supabase (storage), Redis (cache/rate-limit), Resend (email), Sentry, JWT + Google OAuth |
+| Services | Supabase (storage), in-memory cache/rate-limit, Resend (email), Sentry, JWT + Google OAuth |
 | Package manager | pnpm 8.15.0 (workspaces) |
 
 ## Project structure
@@ -33,7 +33,7 @@ chatapp/
 
 - Node.js 20+
 - pnpm 8.15.0 (`npm i -g pnpm@8.15.0` or `corepack enable`)
-- MongoDB, Redis (optional — backend falls back to in-memory)
+- MongoDB (cache/rate-limit/sessions are in-memory — no Redis needed)
 
 ## Setup
 

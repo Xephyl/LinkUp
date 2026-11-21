@@ -2,7 +2,6 @@
 // Layer 4: Application Config - Single source of truth aggregating all layers
 
 import { env, isDevelopment, isStaging, isProduction } from "./env";
-import { runtimeConfig } from "./runtime";
 import { serviceConfig } from "./services";
 
 // Application Config (Layer 4)
@@ -18,9 +17,6 @@ export const config = {
   isDevelopment,
   isStaging,
   isProduction,
-  
-  // Runtime (Layer 2)
-  runtime: runtimeConfig,
   
   // Services (Layer 3)
   services: serviceConfig,
@@ -45,11 +41,3 @@ export const {
 export const db = config.services.database;
 export const jwt = config.services.jwt;
 export const email = config.services.email;
-export const oauth = config.services.oauth;
-export const redis = config.services.redis;
-export const socket = config.services.socket;
-export const media = config.services.media;
-export const rateLimit = config.services.rateLimit;
-
-// Runtime shortcuts
-export const features = config.runtime;

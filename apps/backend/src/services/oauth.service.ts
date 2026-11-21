@@ -1,7 +1,7 @@
 import crypto from "node:crypto";
 import { User, IUser } from "../models/user.model";
 import { OAuthVerificationError } from "../utils/errors";
-import { getRedis } from "../config/redis";
+import { setIfAbsent } from "../config/cache";
 
 // Google API Response Types
 interface GoogleTokenExchangeResponse {
@@ -71,7 +71,7 @@ const validateAuthInputs = (code: string): { clientId: string; clientSecret: str
   return { clientId, clientSecret };
 };
 
-// Helper function to check code replay in Redis
+// Helper function to check code replay in the in-memory cache
 const checkCodeReplay = async (code: string): Promise<void> => {
   const codeHash = crypto
     .createHash("sha256")
@@ -80,27 +80,10 @@ const checkCodeReplay = async (code: string): Promise<void> => {
     .slice(0, 32);
   const codeKey = `oauth_code_used:${codeHash}`;
 
-  try {
-    const redis = getRedis();
-    // Atomic SET with NX and EX to prevent race conditions
-    const result = await redis.set(codeKey, "1", "EX", 300, "NX");
-    if (result !== "OK") {
-      throw new OAuthVerificationError(
-        "Authorization code has already been used",
-      );
-    }
-  } catch (err) {
-    if (err instanceof OAuthVerificationError) throw err;
-    const isProduction = process.env.NODE_ENV === 'production';
-    const strict = process.env.OAUTH_REPLAY_CHECK_REQUIRED === 'true' || isProduction;
-    if (strict) {
-      throw new OAuthVerificationError(
-        "Sign-in temporarily unavailable. Please try again."
-      );
-    }
-    console.warn(
-      "[googleAuth] Redis code-replay check unavailable — dev fallback:",
-      (err as Error).message,
+  // Atomic check-and-set — rejects replayed authorization codes
+  if (!setIfAbsent(codeKey, 300)) {
+    throw new OAuthVerificationError(
+      "Authorization code has already been used",
     );
   }
 };

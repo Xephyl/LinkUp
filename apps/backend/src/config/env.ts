@@ -23,11 +23,6 @@ export const envSchema = z.object({
   RESEND_API_KEY: z.string().min(1, "RESEND_API_KEY is required"),
   EMAIL_FROM: z.string().email(), // keep — used as Resend from: field
 
-  // Redis (optional)
-  REDIS_URL: z.string().optional(),
-  REDIS_HOST: z.string().optional().default("localhost"),
-  REDIS_PORT: z.string().transform(Number).default("6379"),
-
   // Client
   CLIENT_URL: z.string().url(),
 
@@ -39,17 +34,6 @@ export const envSchema = z.object({
   SENTRY_DSN: z.string().url().optional().or(z.literal("")).transform(v => v === "" ? undefined : v),
   // Set to git SHA in CI/CD: SENTRY_RELEASE=$(git rev-parse --short HEAD)
   SENTRY_RELEASE: z.string().optional().or(z.literal("")).transform(v => v === "" ? undefined : v),
-
-  // Feature Flags
-  ENABLE_NEW_CHAT: z.coerce.boolean().default(false),
-  MESSAGE_RETENTION_DAYS: z.coerce.number().default(30),
-  RATE_LIMIT_STRICT: z.coerce.boolean().default(false),
-
-  // Test Environment (only required when NODE_ENV=test)
-  TEST_USER_EMAIL: z.string().email().optional(),
-  TEST_USER_PASSWORD: z.string().min(1).optional(),
-  TEST_ADMIN_EMAIL: z.string().email().optional(),
-  TEST_ADMIN_PASSWORD: z.string().min(1).optional(),
 });
 
 export const env = envSchema.parse(process.env);

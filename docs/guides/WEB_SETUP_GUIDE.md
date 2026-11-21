@@ -86,7 +86,6 @@ VITE_SENTRY_RELEASE=chatapp-web@1.0.0
 For backend configuration, edit `.env.local` in the project root with variables like:
 - `MONGO_URI` - MongoDB connection string
 - `JWT_SECRET` - JWT signing secret
-- `REDIS_URL` - Redis connection
 - `GOOGLE_CLIENT_ID/SECRET` - Google OAuth credentials
 - `RESEND_API_KEY` - Email service API key
 

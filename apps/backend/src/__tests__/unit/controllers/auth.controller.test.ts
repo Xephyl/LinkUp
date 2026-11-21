@@ -2,15 +2,12 @@ import { mockRequest, mockResponse, mockNext } from '../../helpers/mockRequest';
 import { TestUserFactory } from '../../helpers/testUserFactory';
 
 // ─── Mock all external dependencies ──────────────────────────────────────────
-// These are mocked at module level so they never touch real DB/Redis/email
+// These are mocked at module level so they never touch real DB/cache/email
 
 jest.mock('../../../models/user.model');
-jest.mock('../../../config/redis', () => ({
+jest.mock('../../../config/cache', () => ({
   cacheSet: jest.fn().mockResolvedValue(undefined),
   cacheDel: jest.fn().mockResolvedValue(undefined),
-  getRedis: jest.fn().mockReturnValue({
-    publish: jest.fn().mockResolvedValue(1),
-  }),
 }));
 jest.mock('../../../services/audit.service', () => ({
   logAuditEvent: jest.fn(),
@@ -38,7 +35,7 @@ jest.mock('../../../config', () => ({
 // ─── Import AFTER mocks are set up ───────────────────────────────────────────
 import { register, login, logout, getMe, forgotPassword, googleAuth } from '../../../controllers/auth.controller';
 import { User } from '../../../models/user.model';
-import { cacheSet, cacheDel } from '../../../config/redis';
+import { cacheSet, cacheDel } from '../../../config/cache';
 import { logAuditEvent } from '../../../services/audit.service';
 import { sendEmail } from '../../../utils/email';
 import { ValidationError, ConflictError, UnauthorizedError, NotFoundError } from '../../../utils/errors';
@@ -263,7 +260,7 @@ describe('login', () => {
 // ─── logout ──────────────────────────────────────────────────────────────────
 
 describe('logout', () => {
-  it('clears Redis session and returns success', async () => {
+  it('clears session and returns success', async () => {
     const req = mockRequest({ user: { _id: '507f1f77bcf86cd799439011', role: 'user' } } as any);
     const res = mockResponse();
 

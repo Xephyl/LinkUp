@@ -9,7 +9,6 @@ Before you begin, ensure you have the following installed:
 - **Node.js** (v18 or higher)
 - **pnpm** (v8 or higher) - **Required for this monorepo**
 - **MongoDB** (v5.0 or higher) - For primary database
-- **Redis** (v6.0 or higher) - For caching and sessions (optional)
 - **Git**
 
 ## Architecture Overview
@@ -18,7 +17,7 @@ The backend is built with:
 
 - **Framework**: Express.js with TypeScript
 - **Database**: MongoDB with Mongoose ODM
-- **Cache**: Redis (optional, graceful fallback)
+- **Cache**: In-memory (sessions, rate limits, message cache)
 - **Real-time**: Socket.io for WebSocket connections
 - **Authentication**: JWT tokens with bcryptjs
 - **File Upload**: Multer for handling file uploads
@@ -33,7 +32,7 @@ backend/
 ├── src/
 │   ├── config/
 │   │   ├── database.ts    # MongoDB connection
-│   │   └── redis.ts        # Redis connection
+│   │   └── cache.ts       # In-memory cache (sessions, rate-limit-adjacent data)
 │   ├── controllers/        # Route controllers
 │   ├── middlewares/        # Express middlewares
 │   ├── models/            # Mongoose models
@@ -77,9 +76,6 @@ NODE_ENV=development
 
 # Database Configuration
 MONGO_URI=mongodb://localhost:27017/chatapp
-
-# Redis Configuration (optional)
-REDIS_URL=redis://localhost:6379
 
 # JWT Configuration
 JWT_SECRET=your-super-secret-jwt-key-here
@@ -125,29 +121,6 @@ sudo systemctl start mongod              # Linux
 2. Create free cluster
 3. Get connection string
 4. Update `MONGO_URI` in `.env`
-
-#### Redis (Optional but Recommended)
-
-**Option 1: Local Redis**
-```bash
-# Install Redis locally
-# On macOS with Homebrew:
-brew install redis
-
-# On Ubuntu:
-sudo apt-get install redis-server
-
-# On Windows: Use WSL or Memurai
-
-# Start Redis
-brew services start redis  # macOS
-sudo systemctl start redis # Linux
-```
-
-**Option 2: Redis Cloud**
-1. Create account at [Redis Cloud](https://redis.com/try-free/)
-2. Get connection string
-3. Update `REDIS_URL` in `.env`
 
 ### 4. Start Development Server
 
@@ -252,16 +225,6 @@ sudo systemctl status mongod        # Linux
 
 # Check connection string
 mongosh "mongodb://localhost:27017/chatapp"
-```
-
-**Redis connection failed:**
-```bash
-# Check Redis is running
-brew services list | grep redis  # macOS
-sudo systemctl status redis       # Linux
-
-# Test connection
-redis-cli ping
 ```
 
 **TypeScript compilation errors:**

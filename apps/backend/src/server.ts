@@ -9,19 +9,13 @@ const envFile =
 
 dotenv.config({ path: path.resolve(process.cwd(), envFile) });
 
-import { initSentry, captureException } from "./config/sentry";
+import { initSentry } from "./config/sentry";
 initSentry();
 
 import http from "node:http";
 import { Server as SocketServer } from "socket.io";
-import { createAdapter } from "@socket.io/redis-adapter";
 import app from "./app";
 import { connectDB } from "./config/database";
-import {
-  connectRedis,
-  createAdapterClients,
-  closeRedisConnections,
-} from "./config/redis";
 import { initSocketHandlers } from "./services/socket.service";
 import { setIO } from "./config/socket";
 
@@ -70,60 +64,6 @@ setIO(io);
 const startServer = async (): Promise<void> => {
   try {
     await connectDB();
-    await connectRedis();
-
-    // Adapter enabled only in production (or via env var)
-    const enableAdapter = process.env.NODE_ENV === 'production' ||
-                          process.env.REDIS_ADAPTER_ENABLED === 'true';
-
-    if (enableAdapter) {
-      try {
-        const { pubClient, subClient } = createAdapterClients();
-
-        // Explicitly connect both clients before handing to adapter
-        await Promise.all([pubClient.connect(), subClient.connect()]);
-
-        io.adapter(createAdapter(pubClient, subClient));
-
-        // Optional: Monitor adapter events (debug level)
-        io.of("/").adapter.on("create-room", (room) => {
-          console.debug(`📦 Adapter: room created — ${room}`);
-        });
-        io.of("/").adapter.on("delete-room", (room) => {
-          console.debug(`🗑️ Adapter: room deleted — ${room}`);
-        });
-        io.of("/").adapter.on("join-room", (room, id) => {
-          console.debug(`➕ Adapter: socket ${id} joined room ${room}`);
-        });
-        io.of("/").adapter.on("leave-room", (room, id) => {
-          console.debug(`➖ Adapter: socket ${id} left room ${room}`);
-        });
-
-        console.log('✅ Socket.IO Redis adapter attached — multi-instance mode ACTIVE');
-      } catch (adapterErr) {
-        // Capture error in Sentry for monitoring
-        captureException(adapterErr, {
-          tags: { component: 'redis-adapter' }
-        });
-
-        // REDIS_ADAPTER_REQUIRED=true in production prevents silent degradation.
-        // Without this, a Redis hiccup causes multi-instance deployments to lose
-        // socket sync — users stop seeing each other's messages with no visible error.
-        const strictAdapter = process.env.REDIS_ADAPTER_REQUIRED === 'true';
-        if (strictAdapter) {
-          console.error('❌ Redis adapter is REQUIRED but failed. Shutting down to prevent inconsistent cluster state.');
-          process.exit(1);
-        }
-
-        console.warn(
-          '⚠️ Redis adapter failed — falling back to in-memory. ' +
-          'Multi-instance sync DISABLED.',
-          adapterErr instanceof Error ? adapterErr.message : ''
-        );
-      }
-    } else {
-      console.log('ℹ️  Redis adapter disabled (development) — single instance mode');
-    }
 
     initSocketHandlers(io);
 
@@ -167,9 +107,6 @@ const gracefulShutdown = async () => {
         httpServer.close(() => resolve());
       });
       console.log('🌐 HTTP server closed.');
-
-      // Step 3 — close Redis connections last (adapter may still need them during step 1)
-      await closeRedisConnections();
       console.log('✅ Server shut down cleanly.');
     } catch (error) {
       console.error('Error during shutdown:', error);
