@@ -43,8 +43,7 @@ backend/
 │   └── server.ts          # Server entry point
 ├── package.json
 ├── tsconfig.json
-├── .env.example
-└── Dockerfile
+└── .env.example
 ```
 
 ## Setup Instructions
@@ -138,7 +137,7 @@ brew install redis
 # On Ubuntu:
 sudo apt-get install redis-server
 
-# On Windows: Use WSL or Docker
+# On Windows: Use WSL or Memurai
 
 # Start Redis
 brew services start redis  # macOS

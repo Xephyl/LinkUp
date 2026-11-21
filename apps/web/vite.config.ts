@@ -79,9 +79,7 @@ export default defineConfig(({ mode }) => {
       port: 3000,
       allowedHosts: [
         'localhost',
-        '.ngrok-free.dev',
-        '.ngrok-free.app',
-        '.ngrok.app',
+        '.trycloudflare.com',
       ],
       proxy: {
         '/api': {

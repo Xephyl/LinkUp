@@ -30,8 +30,7 @@ chatapp/
 │   └── ...
 ├── packages/
 │   └── shared/                # Shared TypeScript types
-├── infrastructure/            # Docker and deployment configs
-├── scripts/                   # Build and utility scripts
+├── scripts/                   # Build and utility scripts (incl. Cloudflare tunnel)
 ├── docs/                      # Documentation and guides
 ├── package.json              # Root monorepo configuration
 ├── pnpm-workspace.yaml       # pnpm workspace definition
@@ -60,9 +59,9 @@ Create environment files for each workspace as needed:
 cd chatapp/apps/web
 cp .env.example .env
 
-# Backend environment - use the Docker example as reference
+# Backend environment - copy the tunnel example for reference
 cd chatapp
-cp .env.docker.example .env.local
+cp .env.tunnel.example .env.local
 ```
 
 Edit the `.env` files with your configuration:
@@ -133,7 +132,7 @@ cd chatapp/apps/mobile && pnpm start
 cd chatapp/apps/desktop && pnpm dev
 ```
 
-The web application will start at: **http://localhost:5173** (Vite's default port)
+The web application will start at: **http://localhost:3000** (Vite dev server)
 
 ## Available Scripts
 
@@ -156,10 +155,9 @@ Here are the main pnpm scripts available:
 - `pnpm lint` - Run linting across all workspaces
 
 ### Development Utilities
-- `pnpm docker:up` - Start Docker Compose stack
-- `pnpm docker:down` - Stop Docker Compose stack
-- `pnpm tunnel` - Start ngrok tunnel for external access
-- `pnpm dev:tunneled` - Start backend + web with ngrok tunnel
+- `pnpm tunnel` - Start Cloudflare Tunnel to localhost:4000 and email the URL (needs MAIL_* vars in `.env.local`)
+- `pnpm tunnel:raw` - Start Cloudflare Tunnel, print URL only, no email
+- `TUNNEL_PORT=3000 pnpm tunnel` - Tunnel a different port
 
 ### Workspace Management
 - `pnpm install` - Install dependencies for all workspaces
@@ -186,10 +184,10 @@ The application supports:
 
 ### Common Issues
 
-**Port 5173 already in use:**
+**Port 3000 already in use:**
 ```bash
 # Kill existing process
-npx kill-port 5173
+npx kill-port 3000
 
 # Or use different port (Vite will auto-assign)
 pnpm dev:web
@@ -238,7 +236,7 @@ pnpm build:web
 
 Once the development server is running:
 
-1. Open **http://localhost:5173** in your browser
+1. Open **http://localhost:3000** in your browser
 2. Navigate through the application
 3. Check browser console for any errors
 4. Start developing your features!
@@ -255,8 +253,7 @@ With pnpm workspace, you get:
 ## Additional Resources
 
 - **Project Structure**: Use `pnpm tree` to visualize the workspace
-- **Docker Development**: Use `pnpm docker:up` for containerized development
-- **External Testing**: Use `pnpm tunnel` to expose your local server for testing
+- **External Testing**: Use `pnpm tunnel` to expose your local backend via Cloudflare Tunnel (URL is emailed)
 - **Type Safety**: Run `pnpm typecheck` to ensure type correctness across all workspaces
 
 ## Need Help?

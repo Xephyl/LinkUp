@@ -12,8 +12,7 @@ coverage
 .env.development
 .env.production
 .env.test
-.env.docker.development
-.env.docker.production
+.env.tunnel
 
 # logs
 logs

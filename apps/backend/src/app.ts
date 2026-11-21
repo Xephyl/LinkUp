@@ -33,8 +33,8 @@ app.use(
           "'self'",
           env.CLIENT_URL,
           env.SUPABASE_URL,
-          // Allow ngrok tunnels in development
-          ...(isDevelopment ? ['*.ngrok-free.app', '*.ngrok.app'] : []),
+          // Allow Cloudflare dev tunnels in development
+          ...(isDevelopment ? ['*.trycloudflare.com'] : []),
         ],
 
         // Allow avatars/media served from Supabase storage
@@ -71,7 +71,6 @@ const vercelSubdomain = clientHost.endsWith('.vercel.app')
 
 const allowedOrigins = [
   env.CLIENT_URL,
-  process.env.NGROK_URL,
   'http://localhost:3000',
   'http://localhost:5173',
   'http://localhost:5174',
@@ -85,8 +84,7 @@ app.use(
       if (!origin) return callback(null, true);
       if (
         allowedOrigins.includes(origin) ||
-        origin.endsWith('.ngrok-free.app') ||
-        origin.endsWith('.ngrok.app') ||
+        origin.endsWith('.trycloudflare.com') ||
         // Only allow YOUR Vercel project's preview deployments, not all of Vercel
         (vercelSubdomain !== null && origin.endsWith(vercelSubdomain))
       ) {

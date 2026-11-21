@@ -30,7 +30,6 @@ const httpServer = http.createServer(app);
 
 const allowedSocketOrigins = [
   process.env.CLIENT_URL || "http://localhost:3000",
-  process.env.NGROK_URL,
   "http://localhost:3000",
   "http://localhost:5173",
   "http://localhost:5174",
@@ -49,8 +48,7 @@ const io = new SocketServer(httpServer, {
       if (!origin) return callback(null, true);
       if (
         allowedSocketOrigins.includes(origin) ||
-        origin.endsWith('.ngrok-free.app') ||
-        origin.endsWith('.ngrok.app') ||
+        origin.endsWith('.trycloudflare.com') ||
         (vercelSubdomain !== null && origin.endsWith(vercelSubdomain))
       ) {
         return callback(null, true);
