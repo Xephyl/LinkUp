@@ -1,11 +1,11 @@
 # CI — ChatApp
-# Runs on: push to `dev`, PRs targeting `main`
+# Runs on: push to `main`, PRs targeting `main`
 # Jobs: check (typecheck → lint → build)
 name: CI
 
 on:
   push:
-    branches: [dev]
+    branches: [main]
   pull_request:
     branches: [main]
 
