@@ -51,8 +51,7 @@ jobs:
         env:
           VITE_API_URL: "http://localhost:4000"
 
-      - name: Security audit (critical only)
-        run: pnpm audit --audit-level=critical
+  # Security auditing is handled by Dependabot (enabled on the repo).
 
   docker:
     name: Docker build (validate)
