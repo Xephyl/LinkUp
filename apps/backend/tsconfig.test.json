@@ -3,7 +3,8 @@
   "compilerOptions": {
     "types": ["node", "jest"],
     "declaration": false,
-    "declarationMap": false
+    "declarationMap": false,
+    "isolatedModules": true
   },
   "include": ["src/**/*", "src/__tests__/**/*"],
   "exclude": ["node_modules", "dist"]

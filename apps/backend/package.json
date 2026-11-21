@@ -5,11 +5,11 @@
     "dev": "ts-node-dev --respawn --transpile-only src/server.ts",
     "build": "tsc",
     "start": "node dist/server.js",
-    "test": "jest --config tsconfig.test.json",
-    "test:unit": "jest --config tsconfig.test.json --testPathPattern=unit",
-    "test:integration": "jest --config tsconfig.test.json --testPathPattern=integration",
-    "test:coverage": "jest --config tsconfig.test.json --coverage",
-    "test:watch": "jest --config tsconfig.test.json --watch",
+    "test": "jest --config jest.config.ts",
+    "test:unit": "jest --config jest.config.ts --testPathPattern=unit",
+    "test:integration": "jest --config jest.config.ts --testPathPattern=integration",
+    "test:coverage": "jest --config jest.config.ts --coverage",
+    "test:watch": "jest --config jest.config.ts --watch",
     "test:ts": "tsc --project tsconfig.test.json"
   },
   "dependencies": {
