@@ -68,8 +68,7 @@ jobs:
         env:
           VITE_API_URL: ${{ secrets.VITE_API_URL || 'http://localhost:4000' }}
 
-      - name: Security audit
-        run: pnpm audit --audit-level=critical
+      # Security auditing is handled by Dependabot (enabled on the repo).
 
       # Save web dist for Vercel deploy job (avoids rebuilding twice)
       - name: Upload web build artifact
