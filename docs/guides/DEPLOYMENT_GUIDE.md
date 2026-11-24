@@ -63,11 +63,8 @@ Deploy **backend first** — you need its URL before configuring the frontend.
 
 ## 3. Web → Vercel
 
-Two options — pick one:
-
-**Option A: Git integration (simplest)**
-1. Vercel → **Add New → Project** → import repo.
-2. Framework preset: **Other**. `vercel.json` already sets install/build/output:
+1. Vercel dashboard → **Add New → Project** → import `Xephyl/LinkUp`.
+2. Framework Preset: **Other**. `vercel.json` already sets install/build/output:
    - install: `pnpm install --frozen-lockfile`
    - build: `pnpm --filter @chatapp/web run build`
    - output: `apps/web/dist`
@@ -78,12 +75,9 @@ Two options — pick one:
    - `VITE_GOOGLE_CLIENT_ID`
    - `VITE_SENTRY_DSN`, `VITE_SENTRY_RELEASE`
    - Build-time only (Sentry upload): `SENTRY_AUTH_TOKEN`, `SENTRY_ORG`, `SENTRY_PROJECT_WEB`
-4. Deploy.
+4. Deploy. From then on Vercel rebuilds and deploys automatically on every push to `main` — no GitHub secrets or CLI pipeline needed. (An earlier `deploy.yml` that deployed via the Vercel CLI was removed; `ci.yml` still runs typecheck/lint/build on pushes and PRs.)
 
-**Option B: existing GitHub Actions pipeline**
-`deploy.yml` already deploys on push to `main` via the Vercel CLI. Repo is linked (`.vercel/project.json` → project `chatapp-web`). Add GitHub secrets: `VERCEL_TOKEN`, `VERCEL_ORG_ID`, `VERCEL_PROJECT_ID` (values in `.vercel/project.json` + a token from vercel.com/account/tokens). Vercel env vars still must be set in the dashboard — `vercel pull` in CI reads them.
-
-> `VITE_*` values are baked in at **build time**. Changing `VITE_API_URL` requires a redeploy.
+> `VITE_*` values are baked in at **build time**. Changing `VITE_API_URL` requires a redeploy (push an empty commit or hit "Redeploy" in the Vercel dashboard).
 
 ## 4. Wire them together
 
