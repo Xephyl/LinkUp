@@ -42,5 +42,6 @@ Thumbs.db
 #Project Memory
 .devin
 CONVENTIONS.md
+structure.md
 .vercel
 .env*.local
