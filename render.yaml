@@ -1,16 +1,16 @@
 services:
   - type: web
-    name: chatapp-backend-production   # exact existing name
+    name: chatapp-backend-production
     runtime: node
     plan: free
-    # region: <copy from Render Settings>          ⚠️
+    region: oregon
     branch: main
     autoDeployTrigger: checksPass
     buildFilter:
       paths: [apps/backend/**, packages/shared/**, pnpm-lock.yaml, pnpm-workspace.yaml]
-    # ⚠️ Replace both commands with the working ones from Render → Settings if they differ.
-    buildCommand: pnpm install --frozen-lockfile --filter @chatapp/backend... && pnpm --filter @chatapp/backend build
-    startCommand: pnpm --filter @chatapp/backend start
+    buildCommand: pnpm install --frozen-lockfile && pnpm --filter @chatapp/backend build
+    startCommand: node apps/backend/dist/server.js
+    healthCheckPath: /health
     envVars:
       - { key: NODE_ENV, value: production }
       - { key: MONGODB_URI, sync: false }
@@ -29,14 +29,15 @@ services:
     name: chatapp-backend-staging
     runtime: node
     plan: free
+    region: oregon
     branch: staging
     autoDeployTrigger: checksPass
     buildFilter:
       paths: [apps/backend/**, packages/shared/**, pnpm-lock.yaml, pnpm-workspace.yaml]
-    buildCommand: pnpm install --frozen-lockfile --filter @chatapp/backend... && pnpm --filter @chatapp/backend build
-    startCommand: pnpm --filter @chatapp/backend start
+    buildCommand: pnpm install --frozen-lockfile --prod && pnpm --filter @chatapp/backend build
+    startCommand: node apps/backend/dist/server.js
+    healthCheckPath: /health
     envVars:
-      - { key: NODE_VERSION, value: "22" }   # trial the runtime upgrade here first
       - { key: NODE_ENV, value: staging }
       - { key: MONGODB_URI, sync: false }
       - { key: SUPABASE_URL, sync: false }
