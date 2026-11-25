@@ -22,19 +22,20 @@ import { setIO } from "./config/socket";
 const PORT = process.env.PORT || 4000;
 const httpServer = http.createServer(app);
 
+const isDev = process.env.NODE_ENV === "development";
+
 const allowedSocketOrigins = [
   process.env.CLIENT_URL || "http://localhost:3000",
-  "http://localhost:3000",
-  "http://localhost:5173",
-  "http://localhost:5174",
-  "http://127.0.0.1:5173",
-  "http://127.0.0.1:5174",
+  ...(isDev
+    ? [
+        "http://localhost:3000",
+        "http://localhost:5173",
+        "http://localhost:5174",
+        "http://127.0.0.1:5173",
+        "http://127.0.0.1:5174",
+      ]
+    : []),
 ].filter(Boolean) as string[];
-
-// Mirror the same Vercel subdomain restriction applied in app.ts CORS config.
-// Only preview deployments of YOUR project are allowed, not all of Vercel.
-const clientHost = (process.env.CLIENT_URL || '').replace(/^https?:\/\//, '');
-const vercelSubdomain = clientHost.endsWith('.vercel.app') ? `.${clientHost}` : null;
 
 const io = new SocketServer(httpServer, {
   cors: {
@@ -42,8 +43,7 @@ const io = new SocketServer(httpServer, {
       if (!origin) return callback(null, true);
       if (
         allowedSocketOrigins.includes(origin) ||
-        origin.endsWith('.trycloudflare.com') ||
-        (vercelSubdomain !== null && origin.endsWith(vercelSubdomain))
+        (isDev && origin.endsWith('.trycloudflare.com'))
       ) {
         return callback(null, true);
       }

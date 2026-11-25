@@ -60,23 +60,17 @@ app.use(
   })
 );
 
-// Extract the project-specific Vercel subdomain from CLIENT_URL.
-// e.g. CLIENT_URL = "https://chatapp-abc123.vercel.app"
-//      → vercelSubdomain = ".chatapp-abc123.vercel.app"
-// This blocks any other Vercel project from hitting your API.
-const clientHost = env.CLIENT_URL.replace(/^https?:\/\//, '');
-const vercelSubdomain = clientHost.endsWith('.vercel.app')
-  ? `.${clientHost}`       // preview deployments like chatapp-git-main-user.vercel.app
-  : null;
+const devOrigins = isDevelopment
+  ? [
+      'http://localhost:3000',
+      'http://localhost:5173',
+      'http://localhost:5174',
+      'http://127.0.0.1:5173',
+      'http://127.0.0.1:5174',
+    ]
+  : [];
 
-const allowedOrigins = [
-  env.CLIENT_URL,
-  'http://localhost:3000',
-  'http://localhost:5173',
-  'http://localhost:5174',
-  'http://127.0.0.1:5173',
-  'http://127.0.0.1:5174',
-].filter(Boolean) as string[];
+const allowedOrigins = [env.CLIENT_URL, ...devOrigins].filter(Boolean) as string[];
 
 app.use(
   cors({
@@ -84,9 +78,7 @@ app.use(
       if (!origin) return callback(null, true);
       if (
         allowedOrigins.includes(origin) ||
-        origin.endsWith('.trycloudflare.com') ||
-        // Only allow YOUR Vercel project's preview deployments, not all of Vercel
-        (vercelSubdomain !== null && origin.endsWith(vercelSubdomain))
+        (isDevelopment && origin.endsWith('.trycloudflare.com'))
       ) {
         return callback(null, true);
       }
